@@ -1,0 +1,30 @@
+{
+  "name": "RP2040PioServos",
+  "version": "0.9.0",
+  "keywords": "device, control, pio, interrupt, isr, isr-based, mission-critical, accuracy, precise, non-blocking, mbed, rpi-pico, rp2040, nano-rp2040-connect, servo, pio",
+  "description": "This library can drive up to 32 servos with just one PIO and 1 SM per 8 servo. Only for RP2040-based boards with FreeRTOS backend. 50hz update only.",
+  "authors":
+  {
+    "name":  "Radek Voltr",
+    "url":   "https://github.com/RadekVoltr",
+    "maintainer": true
+  },   
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/RadekVoltr/2040PioServos"
+  },
+  "homepage": "https://github.com/RadekVoltr/2040PioServos",
+  "export": {
+    "exclude": [
+      "linux",
+      "extras",
+      "tests"
+    ]
+  },
+  "license": "GPLv3",
+  "frameworks": "*",
+  "platforms": ["raspberrypi"],
+  "examples": "examples/*/*/*.ino",
+  "headers": ["pio_servo.hpp"]
+}

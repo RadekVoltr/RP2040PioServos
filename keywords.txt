@@ -1,0 +1,14 @@
+#######################################
+# Data types (KEYWORD1)
+#######################################
+
+PioServo KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+setServoMicros	KEYWORD2
+addServoBlock	KEYWORD2
+runServoBlock	KEYWORD2
+
