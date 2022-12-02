@@ -91,7 +91,11 @@ public:
     {
         for (size_t i = 0; i < MAX_SERVO_SETS; i++)
             if (pin >= ServoSet[i].pin_start && pin < ServoSet[i].pin_start + ServoSet[i].pin_count)
-                setServoMicros(i, pin - ServoSet[i].pin_start);
+                {
+                    setServoMicros(i, pin - ServoSet[i].pin_start, micros);
+                    return;
+                }
+
     }
 
     inline void setServoMicros(int8_t Block, int8_t pinNum, int16_t micros)
@@ -206,21 +210,21 @@ public:
         }
 
         //Serial.println("task created");
-        Serial.flush();
+        //Serial.flush();
 
         ServoSet[Block].xDMAUpdate = Handle;
 
         //Serial.println("task done");
-        Serial.flush();
+        //Serial.flush();
         ServoBufferUpdate(Block);
         //Serial.println("Servo buff done");
-        Serial.flush();
+        //Serial.flush();
         memcpy(&ServoSet[Block].servo_buffer_b, &ServoSet[Block].servo_buffer_a, sizeof(ServoSet[Block].servo_buffer_a));
         //Serial.println("mem cpy done");
-        Serial.flush();
+        //Serial.flush();
         DMAUpdate(Block);
         //Serial.println("DMA update done");
-        Serial.flush();
+        //Serial.flush();
 
         if (!dma_validation_active)
             xTaskCreate(DMAUpdateTaskCheckChannels, "DMACheckChannels", 1024, this, 1, NULL);
@@ -265,6 +269,8 @@ public:
 
     void ServoBufferUpdate(uint8_t block)
     {
+        //Serial.printf("DMAUpdateTask block %d ",block);
+
         unsigned long *servo_pointer;
 
         if (ServoSet[block].servo_buffer)
@@ -276,12 +282,12 @@ public:
 
         for (size_t i = 0; i < ServoSet[block].pin_count; i++)
         {
-            //  //Serial.printf("DMAUpdateTask servos %d %d \r\n",i, servo_micros[block][i]);
+            //Serial.printf("/ %d %d ",i, ServoSet[block].servo_micros[i]);
             servo_pointer[i] = ServoSet[block].servo_micros[i] << ServoSet[block].pin_count | 1 << i;
             frame = frame - ServoSet[block].servo_micros[i];
         }
 
-        // //Serial.printf("DMAUpdateTask servos %d %d \r\n",8,frame);
+        //Serial.printf("DMAUpdateTask servos %d \r\n",frame);
 
         if (frame < 0)
             frame = 0;
