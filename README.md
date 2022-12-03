@@ -4,6 +4,11 @@
 
 <br>
 
+## Instalation
+
+Download or checkout library into folder inside of your Arduino Library folder.
+Works only for RP2040, tested with Arduino Pico framework and Raspberry Pico board.
+
 ## Principles
 
 Library utilizes PIO, SMs and DMA transfers for driving up to 8 servos per each SM. Code using similar approach as old FM RC transmitters/receivers and so servo PWMs follows.
