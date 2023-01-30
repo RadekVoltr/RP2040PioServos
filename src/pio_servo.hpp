@@ -9,6 +9,8 @@
 #include <string.h>
 #include <climits>
 #include "multi_servo.pio.h"
+#include "hardware/sync.h"
+
 
 #ifndef MAX_SERVO_SETS
 #define MAX_SERVO_SETS 4
@@ -51,6 +53,7 @@ private:
     PIO pio;
     int offset;
     servoSet ServoSet[MAX_SERVO_SETS];
+    spin_lock_t *spinlock;
 
 public:
     static inline PioServo *self = nullptr;
@@ -63,15 +66,18 @@ public:
         interrupt_active = false;
         dma_validation_active = false;
 
+        auto spinlock_num = spin_lock_claim_unused(true) ;
+        spinlock = spin_lock_init(spinlock_num) ;        
+
         self = this;
         for (size_t i = 0; i < MAX_DMA_CHANNELS; i++)
             dmaChannelBlock[i] = -1;
 
         for (size_t i = 0; i < MAX_SERVO_SETS; i++)
         {
-            ServoSet[i].servo_buffer = true;
+            ServoSet[i].servo_buffer = true; 
             for (size_t y = 0; y < 8; y++)
-                ServoSet[i].servo_micros[y] = 1500;
+                ServoSet[i].servo_micros[y] = 0; //keep servo disabled
         }
     };
 
@@ -100,7 +106,9 @@ public:
 
     inline void setServoMicros(int8_t Block, int8_t pinNum, int16_t micros)
     {
+        spin_lock_unsafe_blocking(spinlock) ;
         ServoSet[Block].servo_micros[pinNum] = micros;
+        spin_unlock_unsafe(spinlock) ;
     }
 
     int8_t addServoBlock(int8_t startPin, int8_t pinCount, TaskHandle_t UpdateTask)
@@ -190,19 +198,19 @@ public:
         {
         case 0:
             //Serial.println("Create 0");
-            xTaskCreate(DMAUpdateTaskCh0, "Servos1", 1024, this, 3, &Handle);
+            xTaskCreate(DMAUpdateTaskCh0, "Servos1", 1424, this, 3, &Handle);
             break;
         case 1:
             //Serial.println("Create 1");
-            xTaskCreate(DMAUpdateTaskCh1, "Servos2", 1024, this, 3, &Handle);
+            xTaskCreate(DMAUpdateTaskCh1, "Servos2", 1424, this, 3, &Handle);
             break;
         case 2:
             //Serial.println("Create 2");
-            xTaskCreate(DMAUpdateTaskCh2, "Servos3", 1024, this, 3, &Handle);
+            xTaskCreate(DMAUpdateTaskCh2, "Servos3", 1424, this, 3, &Handle);
             break;
         case 3:
             //Serial.println("Create 3");
-            xTaskCreate(DMAUpdateTaskCh3, "Servos4", 1024, this, 3, &Handle);
+            xTaskCreate(DMAUpdateTaskCh3, "Servos4", 1424, this, 3, &Handle);
             break;
         default:
             //Serial.println("default return");
@@ -227,7 +235,7 @@ public:
         //Serial.flush();
 
         if (!dma_validation_active)
-            xTaskCreate(DMAUpdateTaskCheckChannels, "DMACheckChannels", 1024, this, 1, NULL);
+            xTaskCreate(DMAUpdateTaskCheckChannels, "DMACheckChannels", 1424, this, 1, NULL);
 
     }
 
@@ -253,6 +261,7 @@ public:
 
         unsigned long *servo_pointer;
 
+        spin_lock_unsafe_blocking(spinlock) ;
         if (ServoSet[block].servo_buffer)
         {
             servo_pointer = &(ServoSet[block].servo_buffer_a)[0];
@@ -260,6 +269,7 @@ public:
         else
             servo_pointer = &(ServoSet[block].servo_buffer_b)[0];
         ServoSet[block].servo_buffer = !ServoSet[block].servo_buffer;
+        spin_unlock_unsafe(spinlock) ;
 
         if (!dma_channel_is_busy(ServoSet[block].dmaChannel))
             dma_channel_transfer_from_buffer_now(ServoSet[block].dmaChannel, servo_pointer, ServoSet[block].pin_count + 1);
@@ -273,10 +283,12 @@ public:
 
         unsigned long *servo_pointer;
 
+        spin_lock_unsafe_blocking(spinlock) ;
         if (ServoSet[block].servo_buffer)
             servo_pointer = &ServoSet[block].servo_buffer_a[0];
         else
             servo_pointer = &ServoSet[block].servo_buffer_b[0];
+        spin_unlock_unsafe(spinlock) ;
 
         int frame = 20000;
 

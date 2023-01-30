@@ -12,7 +12,22 @@ One SM need 9 32bit values for 8 servos (at maximum) and in this 9 values you ca
 
 All data are prepared in one of two buffers. DMA reading data from buffer. In DMA IRQ will code switch between buffers (similar way as framebuffer on video systems), task DMA to send next frame and wake up task which will prepare data for next round.
 
-Due 20ms timing and buffer switching can be whole code CPU/thread safe even without using locking.
+Due 20ms timing and buffer switching can be whole code CPU/thread safe even without slow locking. Library uses spinlock for keeping buffer modifications safe (spinlock is 100x faster than mutex/binary semaphore).
+
+
+
+
+<br>
+<br>
+
+## Changelog
+
+### 0.9.1
+- library now eat one free spinlock
+- setServoMicros and reading data is now secured by spinlock
+- default servo value set in constructor is now 0. Most servos stay disabled with zero but NOT ALL. Test your servos first!!!
+- value can be changed before calling addServoBlock. addServoBlock will send set value to the servos immediatelly.
+
 
 
 <br>
